@@ -191,8 +191,13 @@ public class KThread {
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
-	if (currentThread.joined)
-		currentThread.joinQueue.nextThread().ready();
+	if (currentThread.joined){
+		KThread next = currentThread.joinQueue.nextThread();
+		while (next != null){
+			next.ready();
+			next = currentThread.joinQueue.nextThread();
+		}
+	}
 
 	currentThread.status = statusFinished;
 	
@@ -281,16 +286,13 @@ public class KThread {
 
 	if (this.status == statusFinished) return;
 
-	Lib.assertTrue(!currentThread.joining);
-	Lib.assertTrue(!this.joined);
-
 	boolean intStatus = Machine.interrupt().disable();
 
-	currentThread.joining = true;
+	if (!this.joined){
+		this.joinQueue = ThreadedKernel.scheduler.newThreadQueue(true);//transfer priority
+		this.joinQueue.acquire(this);//needed by transfering priority
+	}
 	this.joined = true;
-
-	this.joinQueue = ThreadedKernel.scheduler.newThreadQueue(true);//transfer priority
-	this.joinQueue.acquire(this);
 	this.joinQueue.waitForAccess(currentThread);//nextThread is currentThread
 
 	currentThread.sleep();
@@ -451,6 +453,11 @@ public class KThread {
     joinTest1.fork();
     joinTest0.fork();
     joinTest1.join();
+
+    //-----------------Condition2 Test-------------------
+    Fridge.test();
+
+
     }
 
     private static final char dbgThread = 't';
@@ -478,7 +485,6 @@ public class KThread {
     private Runnable target;
     private TCB tcb;
     private boolean joined = false;
-    private boolean joining = false;
     private ThreadQueue joinQueue = null;
 
     /**
