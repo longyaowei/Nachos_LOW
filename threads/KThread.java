@@ -457,7 +457,7 @@ public class KThread {
     //-----------------Condition2 Test-------------------
     Fridge.test();
 
-
+    ThreadedKernel.alarm.selfTest();
     }
 
     private static final char dbgThread = 't';
