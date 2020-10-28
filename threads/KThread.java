@@ -191,6 +191,8 @@ public class KThread {
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
+	if (currentThread.joined)
+		currentThread.joinQueue.nextThread().ready();
 
 	currentThread.status = statusFinished;
 	
@@ -277,6 +279,22 @@ public class KThread {
 
 	Lib.assertTrue(this != currentThread);
 
+	if (this.status == statusFinished) return;
+
+	Lib.assertTrue(!currentThread.joining);
+	Lib.assertTrue(!this.joined);
+
+	boolean intStatus = Machine.interrupt().disable();
+
+	currentThread.joining = true;
+	this.joined = true;
+
+	this.joinQueue = ThreadedKernel.scheduler.newThreadQueue(true);//transfer priority
+	this.joinQueue.acquire(this);
+	this.joinQueue.waitForAccess(currentThread);//nextThread is currentThread
+
+	currentThread.sleep();
+	Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -397,6 +415,26 @@ public class KThread {
 	private int which;
     }
 
+    private static class JoinTest implements Runnable {
+    JoinTest(int which, KThread joinwhom){
+    	this.which = which;
+    	this.joinwhom = joinwhom;
+    }
+    public void run() {
+    	for (int i=0; i<5; i++) {
+    		System.out.println("*** JoinTest Thread" + which + " looped "
+				   + i + " times");
+    		if (i == 2){
+    			if (joinwhom != null) joinwhom.join();
+    		}
+			//currentThread.yield();
+    	}
+    }
+
+    private int which;
+    private KThread joinwhom = null;
+    }
+
     /**
      * Tests whether this module is working.
      */
@@ -405,6 +443,14 @@ public class KThread {
 	
 	new KThread(new PingTest(1)).setName("forked thread").fork();
 	new PingTest(0).run();
+
+	//-----------------Join Test----------------------
+    System.out.println("\n\nRunning Join Tests"); 
+    KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
+    KThread joinTest1 = new KThread(new JoinTest(1, joinTest0)).setName("JoinTest Thread1");
+    joinTest1.fork();
+    joinTest0.fork();
+    joinTest1.join();
     }
 
     private static final char dbgThread = 't';
@@ -431,6 +477,9 @@ public class KThread {
     private String name = "(unnamed thread)";
     private Runnable target;
     private TCB tcb;
+    private boolean joined = false;
+    private boolean joining = false;
+    private ThreadQueue joinQueue = null;
 
     /**
      * Unique identifer for this thread. Used to deterministically compare
