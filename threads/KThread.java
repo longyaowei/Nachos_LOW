@@ -458,6 +458,9 @@ public class KThread {
     Fridge.test();
 
     ThreadedKernel.alarm.selfTest();
+
+    Communicator communicator = new Communicator();
+    communicator.selfTest();
     }
 
     private static final char dbgThread = 't';
