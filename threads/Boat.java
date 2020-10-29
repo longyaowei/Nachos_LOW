@@ -5,8 +5,8 @@ public class Boat {
 	static BoatGrader bg;
 	
 	static Lock lock;
-	static Condition cond_adult;
-	static Condition cond_child, cond_child_pilot, cond_child_Molokai;
+	static Condition2 cond_adult;
+	static Condition2 cond_child, cond_child_pilot, cond_child_Molokai;
 
 	static Communicator com;
 	
@@ -22,11 +22,16 @@ public class Boat {
 		// System.out.println("\n ***Testing Boats with only 2 children***");
 		// begin(0, 2, b);
 
-		// System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
-	  	// begin(1, 2, b);
+		// System.out.println("\n ***Testing Boats with 5 children, 3 adult***");
+	  	// begin(5, 2, b);
 
-	  	System.out.println("\n ***Testing Boats with 5 children, 5 adults***");
-	  	begin(5, 5, b);
+	  	for (int i = 0; i < 7; ++i) {
+			for (int j = 2; j < 7; ++j) {
+				System.out.println("\n***" + i + " Adults " + j + " Children\n"); 
+				begin(i, j, b);
+			}
+		}
+		  
     }
 
     public static void begin( int adults, int children, BoatGrader b ) {
@@ -38,13 +43,13 @@ public class Boat {
 
 		lock = new Lock();
 		boat = 1;
-		cond_adult = new Condition(lock);
-		cond_child = new Condition(lock);
+		cond_adult = new Condition2(lock);
+		cond_child = new Condition2(lock);
 		at_least_one_child_Molokai = false;
 		n_adult_Oahu = n_child_Oahu = n_child_Molokai = 0;
 		ride = false;
-		cond_child_pilot = new Condition(lock);
-		cond_child_Molokai = new Condition(lock);
+		cond_child_pilot = new Condition2(lock);
+		cond_child_Molokai = new Condition2(lock);
 		com = new Communicator();
 		
 		// Create threads here. See section 3.4 of the Nachos for Java
@@ -71,13 +76,15 @@ public class Boat {
 			t.fork();
 		}
 
+		ThreadedKernel.alarm.waitUntil(1000);
+
 		int arrived = 0;
 		while (arrived < adults + children) {
-			// System.out.println("\n**Start listening");
 			int msg = com.listen();
 			arrived += msg;
-			// System.out.println(String.format("\n**Listen %d", arrived));
 		}
+
+		ThreadedKernel.alarm.waitUntil(1000);
     }
 
     static void AdultItinerary() {
@@ -90,7 +97,7 @@ public class Boat {
 			bg.AdultRowToMolokai();
 		indicates that an adult has rowed the boat across to Molokai
 		*/
-		
+
 		lock.acquire();
 
 		n_adult_Oahu++;
@@ -118,7 +125,6 @@ public class Boat {
 			while ((boat != 1 || !(n_adult_Oahu == 0 || at_least_one_child_Molokai == false) || n_child_Oahu < 2) && ride == false) {
 				cond_child.sleep();
 			}
-			
 			if (boat == 1 && (n_adult_Oahu == 0 || at_least_one_child_Molokai == false) && n_child_Oahu >= 2) {
 				bg.ChildRowToMolokai();
 				com.speak(1);	
@@ -135,7 +141,7 @@ public class Boat {
 				cond_child_Molokai.wake();
 			}
 			else {
-				bg.ChildRideToMolokai();		
+				bg.ChildRideToMolokai();
 				com.speak(1);
 				n_child_Oahu--;
 				n_child_Molokai++;
