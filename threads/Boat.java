@@ -67,12 +67,12 @@ public class Boat {
 		};
 		for (int i = 0; i < adults; ++i) {
 			KThread t = new KThread(r_adult);
-			t.setName(String.format("Adult Thread # %d", i));
+			t.setName("Adult Thread # " + i);
 			t.fork();
 		}
 		for (int i = 0; i < children; ++i) {
 			KThread t = new KThread(r_child);
-			t.setName(String.format("Child Thread # %d", i));
+			t.setName("Child Thread # " + i);
 			t.fork();
 		}
 

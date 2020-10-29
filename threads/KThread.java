@@ -464,6 +464,10 @@ public class KThread {
         Communicator communicator = new Communicator();
         communicator.selfTest();
 
+        //-----------------PriorityScheduler Test--------------
+        PriorityScheduler scheduler = new PriorityScheduler();
+        scheduler.selfTest();
+
         //-----------------Boat Test-------------------
         System.out.println("\n\nBoat Test"); 
         Boat.selfTest();
