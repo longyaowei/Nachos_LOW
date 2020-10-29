@@ -35,7 +35,7 @@ public class Fridge {
 	}
 
 	public static void test(){
-		System.out.println("\n\nCondition Variable Tests");
+		System.out.println("\n\nCondition Variable Test");
     	
     	fridge = new Fridge(0);
 

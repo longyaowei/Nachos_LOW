@@ -93,7 +93,7 @@ public class Communicator {
 	}
 
     public void selfTest(){
-        System.out.println("\n\nCommunicator Tests");
+        System.out.println("\n\nCommunicator Test");
 
         KThread speaker0 = new KThread(new Runnable(){
             public void run(){

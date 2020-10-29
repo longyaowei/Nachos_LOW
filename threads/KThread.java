@@ -290,7 +290,7 @@ public class KThread {
 
 	if (!this.joined){
 		this.joinQueue = ThreadedKernel.scheduler.newThreadQueue(true);//transfer priority
-		this.joinQueue.acquire(this);//needed by transfering priority
+		this.joinQueue.acquire(this);//needed by transferring priority
 	}
 	this.joined = true;
 	this.joinQueue.waitForAccess(currentThread);//nextThread is currentThread
@@ -443,25 +443,29 @@ public class KThread {
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
         
-        // new KThread(new PingTest(1)).setName("forked thread").fork();
-        // new PingTest(0).run();
+        new KThread(new PingTest(1)).setName("forked thread").fork();
+         new PingTest(0).run();
 
-        // //-----------------Join Test----------------------
-        // System.out.println("\n\nRunning Join Tests"); 
-        // KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
-        // KThread joinTest1 = new KThread(new JoinTest(1, joinTest0)).setName("JoinTest Thread1");
-        // joinTest1.fork();
-        // joinTest0.fork();
-        // joinTest1.join();
+        //-----------------Join Test----------------------
+        System.out.println("\n\nJoin Test"); 
+        KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
+        KThread joinTest1 = new KThread(new JoinTest(1, joinTest0)).setName("JoinTest Thread1");
+        joinTest1.fork();
+        joinTest0.fork();
+        joinTest1.join();
 
-        // //-----------------Condition2 Test-------------------
-        // Fridge.test();
+        //-----------------Condition2 Test-------------------
+        Fridge.test();
 
-        // ThreadedKernel.alarm.selfTest();
+        //-----------------Alarm Test-------------------
+        ThreadedKernel.alarm.selfTest();
 
-        // Communicator communicator = new Communicator();
-        // communicator.selfTest();
+        //-----------------Comminucator Test-------------------
+        Communicator communicator = new Communicator();
+        communicator.selfTest();
 
+        //-----------------Boat Test-------------------
+        System.out.println("\n\nBoat Test"); 
         Boat.selfTest();
     }
 

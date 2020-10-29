@@ -100,7 +100,7 @@ public class Alarm {
     }
     
     public static void selfTest(){
-        System.out.println("\n\nAlarm Tests");
+        System.out.println("\n\nAlarm Test");
 
         KThread thread0 = new KThread(new Runnable(){
             public void run(){
