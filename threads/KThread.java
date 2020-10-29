@@ -441,26 +441,28 @@ public class KThread {
      * Tests whether this module is working.
      */
     public static void selfTest() {
-	Lib.debug(dbgThread, "Enter KThread.selfTest");
-	
-	new KThread(new PingTest(1)).setName("forked thread").fork();
-	new PingTest(0).run();
+        Lib.debug(dbgThread, "Enter KThread.selfTest");
+        
+        // new KThread(new PingTest(1)).setName("forked thread").fork();
+        // new PingTest(0).run();
 
-	//-----------------Join Test----------------------
-    System.out.println("\n\nRunning Join Tests"); 
-    KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
-    KThread joinTest1 = new KThread(new JoinTest(1, joinTest0)).setName("JoinTest Thread1");
-    joinTest1.fork();
-    joinTest0.fork();
-    joinTest1.join();
+        // //-----------------Join Test----------------------
+        // System.out.println("\n\nRunning Join Tests"); 
+        // KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
+        // KThread joinTest1 = new KThread(new JoinTest(1, joinTest0)).setName("JoinTest Thread1");
+        // joinTest1.fork();
+        // joinTest0.fork();
+        // joinTest1.join();
 
-    //-----------------Condition2 Test-------------------
-    Fridge.test();
+        // //-----------------Condition2 Test-------------------
+        // Fridge.test();
 
-    ThreadedKernel.alarm.selfTest();
+        // ThreadedKernel.alarm.selfTest();
 
-    Communicator communicator = new Communicator();
-    communicator.selfTest();
+        // Communicator communicator = new Communicator();
+        // communicator.selfTest();
+
+        Boat.selfTest();
     }
 
     private static final char dbgThread = 't';
