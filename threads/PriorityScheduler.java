@@ -263,7 +263,6 @@ public class PriorityScheduler extends Scheduler {
 				int realPriority = curThread.getEffectivePriority();
 				effectivePriority = Math.max(effectivePriority, realPriority);
 			}
-			System.out.println(effectivePriority);
 		}
 		return effectivePriority;
 	}
