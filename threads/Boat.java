@@ -5,8 +5,8 @@ public class Boat {
 	static BoatGrader bg;
 	
 	static Lock lock;
-	static Condition2 cond_adult;
-	static Condition2 cond_child, cond_child_pilot, cond_child_Molokai;
+	static Condition cond_adult;
+	static Condition cond_child, cond_child_pilot, cond_child_Molokai;
 
 	static Communicator com;
 	
@@ -43,13 +43,13 @@ public class Boat {
 
 		lock = new Lock();
 		boat = 1;
-		cond_adult = new Condition2(lock);
-		cond_child = new Condition2(lock);
+		cond_adult = new Condition(lock);
+		cond_child = new Condition(lock);
 		at_least_one_child_Molokai = false;
 		n_adult_Oahu = n_child_Oahu = n_child_Molokai = 0;
 		ride = false;
-		cond_child_pilot = new Condition2(lock);
-		cond_child_Molokai = new Condition2(lock);
+		cond_child_pilot = new Condition(lock);
+		cond_child_Molokai = new Condition(lock);
 		com = new Communicator();
 		
 		// Create threads here. See section 3.4 of the Nachos for Java
