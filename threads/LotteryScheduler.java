@@ -6,6 +6,8 @@ import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import java.util.*;
+
 /**
  * A scheduler that chooses threads using a lottery.
  *
@@ -42,7 +44,81 @@ public class LotteryScheduler extends PriorityScheduler {
      * @return	a new lottery thread queue.
      */
     public ThreadQueue newThreadQueue(boolean transferPriority) {
-	// implement me
-	return null;
+	    return new PriorityQueue(transferPriority);
+    }
+
+    /**
+     * The minimum priority that a thread can have. Do not change this value.
+     */
+    public static final int priorityMinimum = 1;
+    /**
+     * The maximum priority that a thread can have. Do not change this value.
+     */
+    public static final int priorityMaximum = Integer.MAX_VALUE;    
+
+    protected class PriorityQueue extends PriorityScheduler.PriorityQueue {
+        PriorityQueue(boolean transferPriority) {
+            super(transferPriority);
+        }
+
+
+        protected ThreadState pickNextThread() {
+            ThreadState nextThread = null; //the nextThread
+            
+            int target = 1 + Lib.random(getEffectivePriority()), cumsum = 0;
+            for (int i = 0; i < waitQueue.size(); i++) { 
+                ThreadState curThread = waitQueue.get(i);
+                int realPriority = curThread.getEffectivePriority();
+                cumsum += realPriority;
+                if (cumsum >= target) {
+                    nextThread = curThread;
+                    break;
+                }
+            }
+
+            return nextThread;
+        }
+
+        public int getEffectivePriority() {
+            if (transferPriority == true && !validCache) {
+                validCache = true;
+                effectivePriority = 0;
+                for (int i = 0;i < waitQueue.size(); i++) {
+                    ThreadState curThread = waitQueue.get(i);
+                    int realPriority = curThread.getEffectivePriority();
+                    effectivePriority += realPriority;
+                }
+            }
+            return effectivePriority;
+        }
+
+        int effectivePriority = 0;
+
+        LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>();
+        /** curThread: who is having this resource*/
+        ThreadState curThread = null;
+    }
+
+    protected class ThreadState extends PriorityScheduler.ThreadState {
+        public ThreadState(KThread thread) {
+           super(thread);
+        }
+
+        public int getEffectivePriority() {
+            if (validCache == false) {
+                validCache = true;
+                effectivePriority = priority;
+                for(int i = 0;i < holdQueue.size();i ++) {
+                    PriorityQueue curQueue = holdQueue.get(i); 
+                    //since every one in the waiting queue would donate its priority, we only need to compare it with the queue
+                    effectivePriority += curQueue.getEffectivePriority();
+                }
+            }
+	    	return effectivePriority;
+        }
+
+        LinkedList<PriorityQueue> needQueue = new LinkedList<PriorityQueue>();
+        /** holdQueue: queues of resources where this thread holds*/
+        LinkedList<PriorityQueue> holdQueue = new LinkedList<PriorityQueue>();
     }
 }
