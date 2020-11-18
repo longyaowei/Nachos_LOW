@@ -15,7 +15,7 @@
 int
 main()
 {
-	//printf("open text.txt\n");  
+	printf("open text.txt\n");  
   
     halt();
     /* not reached */

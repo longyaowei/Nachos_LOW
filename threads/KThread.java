@@ -446,6 +446,7 @@ public class KThread {
         new KThread(new PingTest(1)).setName("forked thread").fork();
          new PingTest(0).run();
 
+/*
         //-----------------Join Test----------------------
         System.out.println("\n\nJoin Test"); 
         KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
@@ -471,6 +472,7 @@ public class KThread {
         //-----------------Boat Test-------------------
         System.out.println("\n\nBoat Test"); 
         Boat.selfTest();
+*/
     }
 
     private static final char dbgThread = 't';

@@ -25,6 +25,10 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+    	this.fileTable = new OpenFile[16]; //up to 16 open files
+        //stdin and stdout
+        this.fileTable[0] = UserKernel.console.openForReading();
+        this.fileTable[1] = UserKernel.console.openForWriting();
     }
     
     /**
@@ -397,13 +401,85 @@ public class UserProcess {
      * Handle the halt() system call. 
      */
     private int handleHalt() {
-
+        Lib.debug(dbgProcess, "going to halt");
+        
 	Machine.halt();
 	
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
 
+	private int handleCreat(int vaddr){
+        String name = readVirtualMemoryString(vaddr, 256);
+        if (name == null || name.length() == 0) return -1; //invalid name
+        int fileDescriptor = -1;
+        for (int i=0; i<this.fileTable.length; i++)
+        if (this.fileTable[i] == null){
+            fileDescriptor = i;
+            break;
+        }
+        if (fileDescriptor == -1) return -1; //no position
+        OpenFile createdFile = ThreadedKernel.fileSystem.open(name, true);
+        if (createdFile == null) return -1; //failed
+        this.fileTable[fileDescriptor] = createdFile;
+        return fileDescriptor;
+    }
+
+    private int handleOpen(int vaddr){
+        String name = readVirtualMemoryString(vaddr, 256);
+        if (name == null || name.length() == 0) return -1; //invalid name
+        int fileDescriptor = -1;
+        for (int i=0; i<this.fileTable.length; i++)
+        if (this.fileTable[i] == null){
+            fileDescriptor = i;
+            break;
+        }
+        if (fileDescriptor == -1) return -1; //no position
+        OpenFile openFile = ThreadedKernel.fileSystem.open(name, false);
+        if (openFile == null) return -1; //failed
+        this.fileTable[fileDescriptor] = openFile;
+        return fileDescriptor;
+    }
+
+    private int handleRead(int fileDescriptor, int buffer, int count){
+        if (count < 0 || fileDescriptor < 0 || fileDescriptor >= this.fileTable.length) return -1;
+        OpenFile readFile = this.fileTable[fileDescriptor];
+        if (readFile == null) return -1;
+        byte[] content = new byte[count];
+        int readLength = readFile.read(content, 0, count);
+        if (readLength == -1) return -1;
+        int writeLength = writeVirtualMemory(buffer, content, 0, readLength);
+        if (readLength != writeLength) return -1;
+        return readLength;
+    }
+
+    private int handleWrite(int fileDescriptor, int buffer, int count){
+        if (count < 0 || fileDescriptor < 0 || fileDescriptor >= this.fileTable.length) return -1;
+        OpenFile writeFile = this.fileTable[fileDescriptor];
+        if (writeFile == null) return -1;
+        byte[] content = new byte[count];
+        int readLength = readVirtualMemory(buffer, content, 0, count);
+        if (readLength < count) return -1;
+        int writeLength = writeFile.write(content, 0, count);
+        if (writeLength < count) return -1;
+        return count;
+    }
+
+    private int handleClose(int fileDescriptor){
+        if (fileDescriptor < 0 || fileDescriptor >= this.fileTable.length) return -1;
+        OpenFile closeFile = fileTable[fileDescriptor];
+        if (closeFile == null) return -1;
+        fileTable[fileDescriptor] = null;
+        closeFile.close();
+        return 0;
+    }
+
+    private int handleUnlink(int vaddr){
+        String name = readVirtualMemoryString(vaddr, 256);
+        if (name == null || name.length() == 0) return -1; //invalid name
+        if (ThreadedKernel.fileSystem.remove(name)) return 0;
+        return -1;
+    }
 
     private static final int
         syscallHalt = 0,
@@ -449,7 +525,18 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
-
+	case syscallCreate:
+        return handleCreat(a0);
+    case syscallOpen:
+        return handleOpen(a0);
+    case syscallRead:
+        return handleRead(a0,a1,a2);
+    case syscallWrite:
+        return handleWrite(a0,a1,a2);
+    case syscallClose:
+        return handleClose(a0);
+    case syscallUnlink:
+        return handleUnlink(a0);
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -488,6 +575,7 @@ public class UserProcess {
 	}
     }
 
+    protected OpenFile[] fileTable;
     /** The program being run by this process. */
     protected Coff coff;
 
