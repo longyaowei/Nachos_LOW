@@ -423,6 +423,7 @@ public class UserProcess {
 
 	private int handleCreat(int vaddr){
         String name = readVirtualMemoryString(vaddr, 256);
+        Lib.debug(dbgProcess, "file name " + name);
         if (name == null || name.length() == 0) return -1; //invalid name
         int fileDescriptor = -1;
         for (int i=0; i<this.fileTable.length; i++)
