@@ -473,19 +473,10 @@ public class KThread {
         LotteryScheduler scheduler2 = new LotteryScheduler();
         scheduler2.selfTest();
 
-<<<<<<< HEAD
         // //-----------------Boat Test-------------------
         // System.out.println("\n\nBoat Test"); 
         // Boat.selfTest();
-=======
-        //-----------------Boat Test-------------------
-        System.out.println("\n\nBoat Test"); 
-        Boat.selfTest();
 */
-<<<<<<< HEAD
-=======
-//>>>>>>> 6db6f1588c054220a6e797156c62df4c8090adef
->>>>>>> 3a2267f5ee1b0e93d24355595c1d13058a51e19f
     }
 
     private static final char dbgThread = 't';
