@@ -491,11 +491,14 @@ public class UserProcess {
         Lib.debug(dbgProcess, "syscall Exec()");
     	if (file < 0 || file > numPages * pageSize)
     		return -1;
+    		
+        Lib.debug(dbgProcess, "using file  at address" + file);
     	String name = readVirtualMemoryString(file, 256);
+  
+        Lib.debug(dbgProcess, "using file " + name);
     	if (name == null || !name.endsWith(".coff") || argv < 0 || argv > numPages * pageSize || argc < 0)
     		return -1;
     		
-        Lib.debug(dbgProcess, "using file " + name);
     	String arg[] = new String[argc];
     	for (int i = 0;i < argc;i ++) {
     		//load data
@@ -509,8 +512,11 @@ public class UserProcess {
     	}
     	UserProcess childProcess = UserProcess.newUserProcess();
     	childProcess.parentProcess = this;
-    	if (!childProcess.execute(name, arg)) //fail to open the file
+    	Lib.debug(dbgProcess, "parent process is " + pid + "child process is " + childProcess.pid);
+    	if (!childProcess.execute(name, arg)) {//fail to open the file 
+    		Lib.debug(dbgProcess, "exec() incorrect file");
     		return -1;
+    	}
     	childList.add(childProcess);
     	return childProcess.pid;
     }
@@ -615,6 +621,8 @@ public class UserProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
+   
+	Lib.debug(dbgProcess, "enter syscall " + syscall);
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
@@ -631,10 +639,12 @@ public class UserProcess {
     case syscallUnlink:
         return handleUnlink(a0);
    	case syscallExec:
+	    Lib.debug(dbgProcess, "enter syscall exec()");
    		return handleExec(a0,a1,a2);
    	case syscallJoin:
 		return handleJoin(a0,a1);
 	case syscallExit:
+	    Lib.debug(dbgProcess, "enter syscall exit()");
 		return handleExit(a0);
    
 	default:

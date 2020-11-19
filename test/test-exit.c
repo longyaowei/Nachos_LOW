@@ -1,6 +1,6 @@
 #include "syscall.h"
 
 int main() {
-	printf("exit(10)\n");
+	printf("try to exit with a value\n");
 	exit(10);
 }
