@@ -24,7 +24,14 @@ public class UserProcess {
     /**
      * Allocate a new process.
      */
+     
     public UserProcess() {
+    	this.fileTable = new OpenFile[16]; //up to 16 open files
+        //stdin and stdout
+        this.fileTable[0] = UserKernel.console.openForReading();
+        this.fileTable[1] = UserKernel.console.openForWriting();
+        pid = ++ pidNum;
+        ++ numOfProcess;
     }
     
     /**
@@ -50,7 +57,8 @@ public class UserProcess {
         if (!load(name, args))
             return false;
         
-        new UThread(this).setName(name).fork();
+        thread = new UThread(this);
+        thread.setName(name).fork();
 
         unloadSections();
 
@@ -377,6 +385,7 @@ public class UserProcess {
      * the stack, set the A0 and A1 registers to argc and argv, respectively,
      * and initialize all other registers to 0.
      */
+    
     public void initRegisters() {
 	Processor processor = Machine.processor();
 
@@ -397,13 +406,179 @@ public class UserProcess {
      * Handle the halt() system call. 
      */
     private int handleHalt() {
-
+        Lib.debug(dbgProcess, "going to halt");
+        
 	Machine.halt();
 	
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
 
+	private int handleCreat(int vaddr){
+        String name = readVirtualMemoryString(vaddr, 256);
+        if (name == null || name.length() == 0) return -1; //invalid name
+        int fileDescriptor = -1;
+        for (int i=0; i<this.fileTable.length; i++)
+        if (this.fileTable[i] == null){
+            fileDescriptor = i;
+            break;
+        }
+        if (fileDescriptor == -1) return -1; //no position
+        OpenFile createdFile = ThreadedKernel.fileSystem.open(name, true);
+        if (createdFile == null) return -1; //failed
+        this.fileTable[fileDescriptor] = createdFile;
+        return fileDescriptor;
+    }
+
+    private int handleOpen(int vaddr){
+        String name = readVirtualMemoryString(vaddr, 256);
+        if (name == null || name.length() == 0) return -1; //invalid name
+        int fileDescriptor = -1;
+        for (int i=0; i<this.fileTable.length; i++)
+        if (this.fileTable[i] == null){
+            fileDescriptor = i;
+            break;
+        }
+        if (fileDescriptor == -1) return -1; //no position
+        OpenFile openFile = ThreadedKernel.fileSystem.open(name, false);
+        if (openFile == null) return -1; //failed
+        this.fileTable[fileDescriptor] = openFile;
+        return fileDescriptor;
+    }
+
+    private int handleRead(int fileDescriptor, int buffer, int count){
+        if (count < 0 || fileDescriptor < 0 || fileDescriptor >= this.fileTable.length) return -1;
+        OpenFile readFile = this.fileTable[fileDescriptor];
+        if (readFile == null) return -1;
+        byte[] content = new byte[count];
+        int readLength = readFile.read(content, 0, count);
+        if (readLength == -1) return -1;
+        int writeLength = writeVirtualMemory(buffer, content, 0, readLength);
+        if (readLength != writeLength) return -1;
+        return readLength;
+    }
+
+    private int handleWrite(int fileDescriptor, int buffer, int count){
+        if (count < 0 || fileDescriptor < 0 || fileDescriptor >= this.fileTable.length) return -1;
+        OpenFile writeFile = this.fileTable[fileDescriptor];
+        if (writeFile == null) return -1;
+        byte[] content = new byte[count];
+        int readLength = readVirtualMemory(buffer, content, 0, count);
+        if (readLength < count) return -1;
+        int writeLength = writeFile.write(content, 0, count);
+        if (writeLength < count) return -1;
+        return count;
+    }
+
+    private int handleClose(int fileDescriptor){
+        if (fileDescriptor < 0 || fileDescriptor >= this.fileTable.length) return -1;
+        OpenFile closeFile = fileTable[fileDescriptor];
+        if (closeFile == null) return -1;
+        fileTable[fileDescriptor] = null;
+        closeFile.close();
+        return 0;
+    }
+
+    private int handleUnlink(int vaddr){
+        String name = readVirtualMemoryString(vaddr, 256);
+        if (name == null || name.length() == 0) return -1; //invalid name
+        if (ThreadedKernel.fileSystem.remove(name)) return 0;
+        return -1;
+    }
+    
+    private int handleExec(int file, int argc, int argv) {
+    	//name of file
+        Lib.debug(dbgProcess, "syscall Exec()");
+    	if (file < 0 || file > numPages * pageSize)
+    		return -1;
+    		
+        Lib.debug(dbgProcess, "using file  at address" + file);
+    	String name = readVirtualMemoryString(file, 256);
+  
+        Lib.debug(dbgProcess, "using file " + name);
+    	if (name == null || !name.endsWith(".coff") || argv < 0 || argv > numPages * pageSize || argc < 0)
+    		return -1;
+    		
+    	String arg[] = new String[argc];
+    	for (int i = 0;i < argc;i ++) {
+    		//load data
+    		byte value[] = new byte[4];
+    		int num = readVirtualMemory(argv + i * 4, value);
+    		if (num != 4) return -1;
+    		arg[i] = readVirtualMemoryString(Lib.bytesToInt(value, 0), 256);
+    		//invalid arg
+    		if (arg[i] == null) return -1;
+    		Lib.debug(dbgProcess, i + "-th arg is" + arg[i]);
+    	}
+    	UserProcess childProcess = UserProcess.newUserProcess();
+    	childProcess.parentProcess = this;
+    	Lib.debug(dbgProcess, "parent process is " + pid + "child process is " + childProcess.pid);
+    	if (!childProcess.execute(name, arg)) {//fail to open the file 
+    		Lib.debug(dbgProcess, "exec() incorrect file");
+    		return -1;
+    	}
+    	childList.add(childProcess);
+    	return childProcess.pid;
+    }
+    
+    private int handleJoin(int pid, int status) {
+		//first the pid must belong to a child
+		int pos = -1;
+    	for (int i = 0;i < childList.size();i ++)
+    		if (childList.get(i).pid == pid) {
+    			pos = i;
+    			break;
+    		}
+    	if (pos == -1)
+    		return -1;
+    	UserProcess childProcess = childList.get(pos);
+    	childProcess.thread.join();
+    	if (!childProcess.goodExit)
+    		return 0;
+    	byte stateChild[] = new byte[4];
+    	stateChild = Lib.bytesFromInt(childProcess.status);
+    	//write back into memory, is it successful?
+    	int num = writeVirtualMemory(status, stateChild);
+    	if (num != 4) //error
+    		return 0;
+    	return 1;
+    }
+    
+    /*
+    close a process, and the status is returned to the parent process.
+    */
+    private int handleExit(int status) {
+        Lib.debug(dbgProcess, "syscall exit()");
+        //first close all opened files
+        for(int i = 0;i < 16;i ++) {
+    		OpenFile closeFile = fileTable[i];
+    		if (fileTable[i] != null) {
+    			fileTable[i] = null;
+    			closeFile.close();
+    		}
+    	}
+    	//save status
+    	this.status = status;
+    	this.goodExit = true;
+    	
+        Lib.debug(dbgProcess, "exit with status " + status);
+    	//free all pages
+    	unloadSections();
+    	//if only the "main" thread is running, close the whole machine
+    	if (numOfProcess == 1) {
+        	Lib.debug(dbgProcess, "exit and the machine terminates");
+    		Machine.halt();
+    	}
+    	//remove this thread
+    	//note, we need a lock for it
+    	numOfProcess --;
+    	//remove from the parent child list
+    	if (parentProcess != null) {
+    		parentProcess.childList.remove(this);
+    	}
+    	UThread.finish();
+    	return 0;
+    }
 
     private static final int
         syscallHalt = 0,
@@ -446,11 +621,32 @@ public class UserProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
+   
+	Lib.debug(dbgProcess, "enter syscall " + syscall);
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
-
-
+	case syscallCreate:
+      	return handleCreat(a0);
+    case syscallOpen:
+        return handleOpen(a0);
+    case syscallRead:
+        return handleRead(a0,a1,a2);
+    case syscallWrite:
+        return handleWrite(a0,a1,a2);
+    case syscallClose:
+        return handleClose(a0);
+    case syscallUnlink:
+        return handleUnlink(a0);
+   	case syscallExec:
+	    Lib.debug(dbgProcess, "enter syscall exec()");
+   		return handleExec(a0,a1,a2);
+   	case syscallJoin:
+		return handleJoin(a0,a1);
+	case syscallExit:
+	    Lib.debug(dbgProcess, "enter syscall exit()");
+		return handleExit(a0);
+   
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 	    Lib.assertNotReached("Unknown system call!");
@@ -488,6 +684,7 @@ public class UserProcess {
 	}
     }
 
+    protected OpenFile[] fileTable;
     /** The program being run by this process. */
     protected Coff coff;
 
@@ -498,6 +695,24 @@ public class UserProcess {
 
     /** The number of pages in the program's stack. */
     protected final int stackPages = 8;
+    
+    /** status of this thread*/
+    private int status;
+    //my parent process
+    UserProcess parentProcess = null;
+    
+    //the process id of this thread
+    public int pid;
+    //what is this thread?
+    UThread thread;
+    //list of child processes
+    private LinkedList<UserProcess> childList = new LinkedList<UserProcess>();
+    //is the thread exiting normally?
+    private boolean goodExit;
+    
+    protected static int pidNum = 0;
+    /** number of active process */
+    protected static int numOfProcess = 0;
     
     private int initialPC, initialSP;
     private int argc, argv;

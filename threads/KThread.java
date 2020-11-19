@@ -446,6 +446,7 @@ public class KThread {
         new KThread(new PingTest(1)).setName("forked thread").fork();
          new PingTest(0).run();
 
+/*
         //-----------------Join Test----------------------
         System.out.println("\n\nJoin Test"); 
         KThread joinTest0 = new KThread(new JoinTest(0, null)).setName("JoinTest Thread0");
@@ -472,9 +473,16 @@ public class KThread {
         LotteryScheduler scheduler2 = new LotteryScheduler();
         scheduler2.selfTest();
 
+<<<<<<< HEAD
         // //-----------------Boat Test-------------------
         // System.out.println("\n\nBoat Test"); 
         // Boat.selfTest();
+=======
+        //-----------------Boat Test-------------------
+        System.out.println("\n\nBoat Test"); 
+        Boat.selfTest();
+*/
+>>>>>>> 6db6f1588c054220a6e797156c62df4c8090adef
     }
 
     private static final char dbgThread = 't';
