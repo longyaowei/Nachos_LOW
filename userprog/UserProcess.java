@@ -62,7 +62,8 @@ public class UserProcess {
         thread = new UThread(this);
         thread.setName(name).fork();
 
-        unloadSections();
+        Lib.debug(dbgProcess, "------- execute ends " + pid);
+        // unloadSections();
 
         return true;
     }
@@ -348,8 +349,11 @@ public class UserProcess {
         pageTable = new TranslationEntry[numPages];
         for (int i = 0; i < numPages; ++i) {
             int ppn = UserKernel.freePhysPages.remove(0);
+            
             pageTable[i] = new TranslationEntry(i, ppn, true, false, false, false);
+            Lib.debug(dbgProcess, "------- load " + pid + " ppn " + ppn);
         }
+        
 
         UserKernel.freePhysPagesLock.release();        
 
@@ -380,6 +384,7 @@ public class UserProcess {
 
         for (int i = 0; i < numPages; i++) {
             UserKernel.freePhysPages.add(pageTable[i].ppn);
+            Lib.debug(dbgProcess, "------- unload " + pid + " ppn " + pageTable[i].ppn);
         }
 
         UserKernel.freePhysPagesLock.release();
@@ -596,6 +601,7 @@ public class UserProcess {
     	this.status = status;
     	this.goodExit = goodexit;
     	//free all pages
+        Lib.debug(dbgProcess, "------- handleExit unload " + pid);
     	unloadSections();
     	//do an exit related to parents & # of live processes
     	exit();
