@@ -141,6 +141,9 @@ public class UserProcess {
 
         byte[] memory = Machine.processor().getMemory();
         
+        Lib.debug(dbgProcess, "vaddr " + vaddr + " len " + length);
+        Lib.debug(dbgProcess, "numPages " + numPages + " pageSize " + pageSize);
+
         if (vaddr < 0 || vaddr >= numPages * pageSize)
             return 0;
 
@@ -151,8 +154,12 @@ public class UserProcess {
             int vpn = (vaddr + i) / pageSize;
             int ppn = pageTable[vpn].ppn;
 
+            Lib.debug(dbgProcess, "vpn " + vpn + " ppn " + ppn);
+
             int pageOffset0 = (vaddr + i) - vpn * pageSize;
-            int pageOffset1 = Math.min(vaddr + amount, (vpn + 1) * pageSize) - vpn * pageSize;
+            int pageOffset1 = Math.min(vaddr + maxAmount, (vpn + 1) * pageSize) - vpn * pageSize;
+
+            Lib.debug(dbgProcess, "offsets " + pageOffset0 + ' ' + pageOffset1);
 
             if (pageTable[vpn].valid) {
                 System.arraycopy(memory, ppn * pageSize + pageOffset0, data, offset + i, pageOffset1 - pageOffset0);
@@ -213,7 +220,7 @@ public class UserProcess {
             int ppn = pageTable[vpn].ppn;
 
             int pageOffset0 = (vaddr + i) - vpn * pageSize;
-            int pageOffset1 = Math.min(vaddr + amount, (vpn + 1) * pageSize) - vpn * pageSize;
+            int pageOffset1 = Math.min(vaddr + maxAmount, (vpn + 1) * pageSize) - vpn * pageSize;
 
             if (!pageTable[vpn].readOnly && pageTable[vpn].valid) {
                 System.arraycopy(data, offset + i, memory, ppn * pageSize + pageOffset0, pageOffset1 - pageOffset0);
