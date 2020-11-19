@@ -568,9 +568,11 @@ public class UserProcess {
     			closeFile.close();
     		}
     	}
+    	//garbage collect
+    	for(int i = 0;i < numPages;i ++)
+    		pageTable[i] = null;
     	//clear the childlist
     	childList.clear();
-    	childList = null;
         Lib.debug(dbgProcess, "exit with status " + status);
     	//if only the "main" thread is running, close the whole machine
     	if (numOfProcess == 1) {
@@ -588,15 +590,15 @@ public class UserProcess {
     	}
     }
     
-    private int handleExit(int status) {
+    private int handleExit(int status, boolean goodexit) {
         Lib.debug(dbgProcess, "syscall exit()");
     	//save status
     	this.status = status;
-    	this.goodExit = true;
-    	//do an exit related to parents & # of live processes
-    	exit();
+    	this.goodExit = goodexit;
     	//free all pages
     	unloadSections();
+    	//do an exit related to parents & # of live processes
+    	exit();
     	UThread.finish();
     	return 0;
     }
@@ -666,7 +668,7 @@ public class UserProcess {
 		return handleJoin(a0,a1);
 	case syscallExit:
 	    Lib.debug(dbgProcess, "enter syscall exit()");
-		return handleExit(a0);
+		return handleExit(a0,true);
    
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -701,7 +703,8 @@ public class UserProcess {
 	default:
 	    Lib.debug(dbgProcess, "Unexpected exception: " +
 		      Processor.exceptionNames[cause]);
-	    Lib.assertNotReached("Unexpected exception");
+	    handleExit(-1,false);
+	    //Lib.assertNotReached("Unexpected exception");
 	}
     }
 
