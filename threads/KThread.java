@@ -442,7 +442,7 @@ public class KThread {
      */
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
-        
+
         new KThread(new PingTest(1)).setName("forked thread").fork();
          new PingTest(0).run();
 
@@ -465,12 +465,16 @@ public class KThread {
         communicator.selfTest();
 
         //-----------------PriorityScheduler Test--------------
-        PriorityScheduler scheduler = new PriorityScheduler();
-        scheduler.selfTest();
+        PriorityScheduler scheduler1 = new PriorityScheduler();
+        // scheduler1.selfTest();
 
-        //-----------------Boat Test-------------------
-        System.out.println("\n\nBoat Test"); 
-        Boat.selfTest();
+        //-----------------LotteryScheduler Test--------------
+        LotteryScheduler scheduler2 = new LotteryScheduler();
+        scheduler2.selfTest();
+
+        // //-----------------Boat Test-------------------
+        // System.out.println("\n\nBoat Test"); 
+        // Boat.selfTest();
     }
 
     private static final char dbgThread = 't';
