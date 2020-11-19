@@ -482,7 +482,6 @@ public class KThread {
         System.out.println("\n\nBoat Test"); 
         Boat.selfTest();
 */
->>>>>>> 6db6f1588c054220a6e797156c62df4c8090adef
     }
 
     private static final char dbgThread = 't';

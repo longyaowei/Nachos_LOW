@@ -31,7 +31,9 @@ public class UserProcess {
         this.fileTable[0] = UserKernel.console.openForReading();
         this.fileTable[1] = UserKernel.console.openForWriting();
         pid = ++ pidNum;
+        cntLock.acquire();
         ++ numOfProcess;
+        cntLock.release();
     }
     
     /**
@@ -518,13 +520,14 @@ public class UserProcess {
     		Lib.debug(dbgProcess, i + "-th arg is" + arg[i]);
     	}
     	UserProcess childProcess = UserProcess.newUserProcess();
+    	childList.add(childProcess);
     	childProcess.parentProcess = this;
     	Lib.debug(dbgProcess, "parent process is " + pid + "child process is " + childProcess.pid);
     	if (!childProcess.execute(name, arg)) {//fail to open the file 
     		Lib.debug(dbgProcess, "exec() incorrect file");
+    		childProcess.exit();
     		return -1;
     	}
-    	childList.add(childProcess);
     	return childProcess.pid;
     }
     
@@ -554,35 +557,43 @@ public class UserProcess {
     /*
     close a process, and the status is returned to the parent process.
     */
-    private int handleExit(int status) {
-        Lib.debug(dbgProcess, "syscall exit()");
+    
+    private void exit() {
         //first close all opened files
-        for(int i = 0;i < 16;i ++) {
+    	for(int i = 0;i < 16;i ++) {
     		OpenFile closeFile = fileTable[i];
     		if (fileTable[i] != null) {
     			fileTable[i] = null;
     			closeFile.close();
     		}
     	}
-    	//save status
-    	this.status = status;
-    	this.goodExit = true;
     	
         Lib.debug(dbgProcess, "exit with status " + status);
-    	//free all pages
-    	unloadSections();
     	//if only the "main" thread is running, close the whole machine
     	if (numOfProcess == 1) {
         	Lib.debug(dbgProcess, "exit and the machine terminates");
     		Machine.halt();
     	}
     	//remove this thread
-    	//note, we need a lock for it
+    	//we need a lock to do that
+    	cntLock.acquire();
     	numOfProcess --;
+    	cntLock.release();
     	//remove from the parent child list
     	if (parentProcess != null) {
     		parentProcess.childList.remove(this);
     	}
+    }
+    
+    private int handleExit(int status) {
+        Lib.debug(dbgProcess, "syscall exit()");
+    	//save status
+    	this.status = status;
+    	this.goodExit = true;
+    	//do an exit related to parents & # of live processes
+    	exit();
+    	//free all pages
+    	unloadSections();
     	UThread.finish();
     	return 0;
     }
@@ -720,6 +731,9 @@ public class UserProcess {
     protected static int pidNum = 0;
     /** number of active process */
     protected static int numOfProcess = 0;
+    
+    //lock for #of process
+    protected static Lock cntLock = new Lock();
     
     private int initialPC, initialSP;
     private int argc, argv;
