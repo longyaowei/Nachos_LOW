@@ -17,33 +17,33 @@ int main(int argc, char** argv)
 {
   int fd, amount;
 
-  fd = open("text.txt");
+  fd = creat("text.txt");
   if (fd==-1) {
     printf("Failed to open text.txt\n");
   }else{
   	  printf("open text.txt\n");  
   }
-/*
+
   int i = unlink("text.txt");
   if (i == -1) {
     printf("Unable to remove text.txt\n");
   }
 
-  //while ((amount = read(fd, buf, BUFSIZE))>0) {
-  //  write(1, buf, amount);
-  //}
 
   int fd2 = creat("text.txt");
   if (fd2 != -1) {
-    printf("A pending-to-remove file should not be reopened before it is removed.\n");
+    printf("unlink pending and create successfully\n");
   }
 
   fd2 = open("text.txt");
   if (fd2 != -1) {
-    printf("A pending-to-remove file should not be reopened before it is removed.\n");
+    printf("unlink pending and open successfully\n");
   }
 
   close(fd);
-*/
-  halt();
+  fd2 = creat("text.txt");
+  if (fd2 != -1) {
+    printf("create successfully\n");
+  } 
+  return 0;
 }

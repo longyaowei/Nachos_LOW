@@ -30,7 +30,7 @@ STDLIB_O = start.o stdio.o stdlib.o
 LIB = assert atoi printf readline stdio strncmp strcat strcmp strcpy strlen memcpy memset test-exit
 NLIB = libnachos.a
 
-TARGETS = halt halt1 sh matmult sort echo cat cp mv rm unlink test-exit test-exec test-exec-args test-join#chat chatserver
+TARGETS = halt halt1 fileTest unlink sh matmult sort echo cat cp mv rm unlink test-exit test-exec test-exec-args test-join#chat chatserver
 
 .SECONDARY: $(patsubst %.c,%.o,$(wildcard *.c))
 

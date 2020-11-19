@@ -3,7 +3,7 @@
 #include "stdlib.h"
 
 char buf[1024];
-int fd, fd2, fdread, n, i, j;
+int fd, fd2, fdread, n, i, j, r;
 
 int main()
 {
@@ -34,13 +34,13 @@ int main()
   buf[n * (n + 1) + 8] = '\n';
   i = write(fd, buf, n * (n + 1) + 9);
   printf("number of bytes written = %d\n", i);
-  int r = close(fd);
-  printf("r = %d\n", r);
-  r = close(-1);
-  printf("r = %d\n", r);
+  r = close(fd);
+  printf("close fileTest.out flag:  %d\n", r);
+  r = close(fd2);
+  printf("close unlink.out flag: %d\n", r);
   r = unlink("unlink.out");
-  printf( "unlink unlink.out flag : %d\n", r );
+  printf( "unlink unlink.out flag: %d\n", r );
   r = unlink("nonexist.out");
-  printf( "unlink nonexist.out flag : %d\n", r );
+  printf( "unlink nonexist.out flag: %d\n", r );
   return 0;
 }

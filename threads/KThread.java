@@ -469,14 +469,13 @@ public class KThread {
         PriorityScheduler scheduler1 = new PriorityScheduler();
         // scheduler1.selfTest();
 
-        //-----------------LotteryScheduler Test--------------
-        LotteryScheduler scheduler2 = new LotteryScheduler();
-        scheduler2.selfTest();
-
         // //-----------------Boat Test-------------------
         // System.out.println("\n\nBoat Test"); 
-        // Boat.selfTest();
-*/
+        // Boat.selfTest();*/ 
+
+        //-----------------LotteryScheduler Test--------------
+        //LotteryScheduler scheduler2 = new LotteryScheduler();
+        //scheduler2.selfTest();
     }
 
     private static final char dbgThread = 't';

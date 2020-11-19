@@ -135,52 +135,61 @@ public class LotteryScheduler extends Scheduler {
 		public void run(){
             }
     	};
-    	KThread low = new KThread(simpleRun).setName("low");
-    	KThread medium = new KThread(simpleRun).setName("medium");
-    	KThread high = new KThread(simpleRun).setName("high");
-    	setPriority(low, priorityMinimum);
-    	setPriority(medium, priorityMinimum + 1);
-    	setPriority(high, priorityMinimum + 2);
 
-    	//Test if it is a priority queue, no transferPriority
-    	PriorityQueue queue1 = new PriorityQueue(false); 
-    	//another queue to test priority donation
-    	PriorityQueue queue3 = new PriorityQueue(false);
-    	queue1.waitForAccess(low);
-    	queue1.waitForAccess(medium);
-    	queue1.waitForAccess(high);
+    	int low1 = 0;
+    	int low2 = 0;
 
-    	queue3.waitForAccess(low);
-    	queue3.waitForAccess(medium);
-    	queue3.waitForAccess(high);
-    	//it should be high->medium->low
-    	System.out.println("Simple Queue is dequing");
-    	System.out.println("\n\n" + queue1.nextThread().getName());
-    	System.out.println("\n\n" + queue1.nextThread().getName());
-    	System.out.println("\n\n" + queue1.nextThread().getName());
+   		for (int i = 0; i < 1000; i++) {
+   			KThread low = new KThread(simpleRun).setName("low");
+	    	KThread medium = new KThread(simpleRun).setName("medium");
+	    	KThread high = new KThread(simpleRun).setName("high");
+	    	setPriority(low, priorityMinimum);
+	    	setPriority(medium, priorityMinimum + 1);
+	    	setPriority(high, priorityMinimum + 2);
 
-    	//Test when there is a priority donation
-    	System.out.println("PriorityDonation is testing");
-    	PriorityQueue queue2 = new PriorityQueue(true);
-    	queue2.acquire(low);
-    	//now the priority of low should be low
-    	System.out.println("The effectivePriority of Low is now " + getEffectivePriority(low));
-    	queue2.waitForAccess(medium);
-    	//now the priority of low should be medium
-    	System.out.println("The effectivePriority of Low is now " + getEffectivePriority(low));
-    	System.out.println("The effectivePriority of Median is now " + getEffectivePriority(medium));
-    	//further insert high
-    	queue2.waitForAccess(high);
-    	//now the priority of low should be high
-    	System.out.println("The effectivePriority of Low is now " + getEffectivePriority(low));
-    	//no change for medium since it has no access
-    	System.out.println("The effectivePriority of Medium is now " + getEffectivePriority(medium));
+	    	//Test if it is a priority queue, no transferPriority
+	    	PriorityQueue queue1 = new PriorityQueue(false); 
+	    	//another queue to test priority donation
+	    	PriorityQueue queue3 = new PriorityQueue(false);
+	    	queue1.waitForAccess(low);
+	    	queue1.waitForAccess(medium);
+	    	queue1.waitForAccess(high);
 
-    	//Queue3 is dequeing, test the order: should be low-high-medium
-    	System.out.println("Queue 3 is dequing");
-    	System.out.println("\n\n" + queue3.nextThread().getName());
-    	System.out.println("\n\n" + queue3.nextThread().getName());
-    	System.out.println("\n\n" + queue3.nextThread().getName());
+	    	queue3.waitForAccess(low);
+	    	queue3.waitForAccess(medium);
+	    	queue3.waitForAccess(high);
+	    	//it should be high->medium->low
+	    	if (queue1.nextThread().getName() == "low")
+	    		low1 += 1;
+	    	System.out.println("Simple Queue is dequing");
+	    	System.out.println("\n\n" + queue1.nextThread().getName());
+	    	System.out.println("\n\n" + queue1.nextThread().getName());
+
+	    	//Test when there is a priority donation
+	    	System.out.println("PriorityDonation is testing");
+	    	PriorityQueue queue2 = new PriorityQueue(true);
+	    	queue2.acquire(low);
+	    	//now the priority of low should be low
+	    	System.out.println("The effectivePriority of Low is now " + getEffectivePriority(low));
+	    	queue2.waitForAccess(medium);
+	    	//now the priority of low should be medium
+	    	System.out.println("The effectivePriority of Low is now " + getEffectivePriority(low));
+	    	System.out.println("The effectivePriority of Median is now " + getEffectivePriority(medium));
+	    	//further insert high
+	    	queue2.waitForAccess(high);
+	    	//now the priority of low should be high
+	    	System.out.println("The effectivePriority of Low is now " + getEffectivePriority(low));
+	    	//no change for medium since it has no access
+	    	System.out.println("The effectivePriority of Medium is now " + getEffectivePriority(medium));
+
+	    	//Queue3 is dequeing, test the order: should be low-high-medium
+	    	System.out.println("Queue 3 is dequing");
+	    	if (queue3.nextThread().getName() == "low")
+	    		low2 += 1;
+	    	System.out.println("\n\n" + queue3.nextThread().getName());
+	    	System.out.println("\n\n" + queue3.nextThread().getName());
+   		}
+   		System.out.println("\n\n" + low1 + ' ' + low2);
     }
 
     /**
