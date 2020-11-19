@@ -568,7 +568,9 @@ public class UserProcess {
     			closeFile.close();
     		}
     	}
-    	
+    	//clear the childlist
+    	childList.clear();
+    	childList = null;
         Lib.debug(dbgProcess, "exit with status " + status);
     	//if only the "main" thread is running, close the whole machine
     	if (numOfProcess == 1) {
